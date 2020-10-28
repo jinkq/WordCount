@@ -3,30 +3,37 @@
 181098118 金可乔
 
 [toc]
+
 ## 设计思路
+
 在hadoop官方示例WordCount v2.0的基础上做修改，修改包括以下几个方面：
+
 ### 特殊词的忽略
+
 #### 忽略标点符号
 
-1. 设置了一个set名为`punctuations`存储从punctuation.txt里读出的标点符号
+1. 在执行jar包的命令设置了2个参数，在-skip后加上停词文件的路径和标点符号文件的路径
 
-	```java
-	private Set <String> punctuations = new HashSet<String>();
-	```
+2. 设置了一个set名为`punctuations`存储从punctuation.txt里读出的标点符号
 
-2. 仿照`parseSkipFile`方法写了`parsePunctuations`方法
-3. 在map方法里使用`replaceAll`方法，将标点符号替换为空格。若替换为空字符，会导致诸如Shakespeare's变成Shakespeares的错误
+  ```java
+  private Set <String> punctuations = new HashSet<String>();
+  ```
+
+3. 仿照`parseSkipFile`方法写了`parsePunctuations`方法
+
+4. 在map方法里使用`replaceAll`方法，将标点符号替换为空格。若替换为空字符，会导致诸如Shakespeare's变成Shakespeares的错误
 
 #### 忽略停词
 
 1.  用名为`patternsToSkip`的set存储stop-word-list.txt里读出的停词
-2. 沿用原有的`parseSkipFile`方法
-3. 在map方法里对单词遍历的循环里，增加判断该词是否是停词的循环判断，若该词是停词，则外循环continue
+2.  沿用原有的`parseSkipFile`方法
+3.  在map方法里对单词遍历的循环里，增加判断该词是否是停词的循环判断，若该词是停词，则外循环continue
 
 #### 忽略数字和长度小于3的单词
 
 1. 写一个正则匹配的`isNumeric()`方法，判断词语是不是数字
-2. 在map方法里对单词遍历的循环里，调用`isNumeric()`方法判断词语是不是数字，或者长度是不是小于3，若是，则continue
+2. 在map方法里对单词遍历的循环里，调用`isNumeric`方法判断词语是不是数字，或者长度是不是小于3，若是，则continue
 
 ### 排序
 
@@ -40,7 +47,23 @@
 1. 重写sortJob的reduce方法，设置计数变量，仅仅write前100个key-value对
 2. 将新的key设置为一个符合输出格式的Text类（字符串拼接），value设为NullWritable，作为最终的输出形式
 
+## 文件夹目录
+
+* input：需要统计词频的文件Shakespeare.txt
+* skip：需要忽略的特殊词文件stop-word-list.txt和punctuation.txt
+* src：代码源文件
+* output：输出文件
+  * result：输出文件的txt格式
+* target：可运行的jar包
+
 ## 实验结果
+
+* 运行程序的命令：在HADOOP_HOME下执行
+
+  ```
+  bin/hadoop jar /home/jkq/FBDP/WordCount/target/WordCount-1.0-SNAPSHOT.jar input output -skip skip/stop-word-list.txt skip/punctuation.txt
+  ```
+
 出现频数排名前100的单词如下：
 1: scene, 10241
 2: thou, 9438
