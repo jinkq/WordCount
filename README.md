@@ -1,17 +1,44 @@
 # WordCount
+
+181098118 金可乔
+
 [toc]
 ## 设计思路
 在hadoop官方示例WordCount v2.0的基础上做修改，修改包括以下几个方面：
 ### 特殊词的忽略
 #### 忽略标点符号
 
+1. 设置了一个set名为`punctuations`存储从punctuation.txt里读出的标点符号
+
+	```java
+	private Set <String> punctuations = new HashSet<String>();
+	```
+
+2. 仿照`parseSkipFile`方法写了`parsePunctuations`方法
+3. 在map方法里使用`replaceAll`方法，将标点符号替换为空格。若替换为空字符，会导致诸如Shakespeare's变成Shakespeares的错误
+
 #### 忽略停词
+
+1.  用名为`patternsToSkip`的set存储stop-word-list.txt里读出的停词
+2. 沿用原有的`parseSkipFile`方法
+3. 在map方法里对单词遍历的循环里，增加判断该词是否是停词的循环判断，若该词是停词，则外循环continue
 
 #### 忽略数字和长度小于3的单词
 
+1. 写一个正则匹配的`isNumeric()`方法，判断词语是不是数字
+2. 在map方法里对单词遍历的循环里，调用`isNumeric`方法判断词语是不是数字，或者长度是不是小于3，若是，则continue
+
 ### 排序
 
+1. 新增了一个名为sortJob的job来进行排序和修改输出格式的操作
+2. 将原wordcount job的输出存储在一个临时文件夹，在sortJob中以该临时文件夹为input path
+3. 调用hadoop内置的InverseMapper，map后交换key和value，即新的key为词语出现的频数，value为词语
+4. 重写一个IntWritableDecreasingComparator类，按照新的key（频数）进行降序排序（原本默认是升序）
+
 ### 修改输出格式
+
+1. 重写sortJob的reduce方法，设置计数变量，仅仅write前100个key-value对
+2. 将新的key设置为一个符合输出格式的Text类（字符串拼接），value设为NullWritable，作为最终的输出形式
 
 ## 实验结果
 出现频数排名前100的单词如下：
@@ -115,3 +142,34 @@
 98: live, 883
 99: little, 883
 100: place, 855
+
+### web截图
+
+![](https://finclaw.oss-cn-shenzhen.aliyuncs.com/img/pic3.png)
+
+* wordcount job：
+
+  ![](https://finclaw.oss-cn-shenzhen.aliyuncs.com/img/pic2.png)
+
+* sort job:
+
+  ![](https://finclaw.oss-cn-shenzhen.aliyuncs.com/img/pic1.png)
+
+## 作业中遇到的问题
+
+1. 在`localhost:8088`点击某个job的history显示unable to connect
+
+   * 原因：未开启history server
+   * 解决方法：在HADOOP_HOME目录下执行`sbin/mr-jobhistory-daemon.sh start historyserver`
+
+2. 创建maven项目时卡在Generating project in Interactive mode
+
+   ![](https://finclaw.oss-cn-shenzhen.aliyuncs.com/img/pic4.png)
+
+   * 解决方法：在创建maven项目的指令后加参数`-DarchetypeCatalog=internal`，让它不要从远程服务器上取catalog
+
+## 任务可以改进的地方
+
+1. 可以进行名词单、复数的还原
+2. 可以进行动词时态的还原
+
